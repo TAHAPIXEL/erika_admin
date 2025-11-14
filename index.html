@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل مدیریت آزمون - Erika Khosravi</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Vazirmatn Font from Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap">
+    
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        .bg-app { background-color: #ffffff; }
+        .text-app { color: #000000; }
+        .border-app { border-color: #000000; }
+        .bg-input { background-color: #fafafa; }
+        .btn-primary { 
+            background-color: #000000; 
+            color: #ffffff; 
+        }
+        .btn-primary:hover { background-color: #333333; }
+        .en-text { 
+            font-family: "Times New Roman", serif; 
+            font-weight: bold; 
+        }
+        body { font-family: 'Vazirmatn', sans-serif; }
+        
+        .user-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .user-card:hover {
+            border-color: #000000;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .user-card.selected {
+            border-color: #000000;
+            background-color: #f9fafb;
+        }
+        
+        .correct-btn {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            margin: 4px;
+            cursor: pointer;
+        }
+        
+        .incorrect-btn {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            margin: 4px;
+            cursor: pointer;
+        }
+        
+        .question-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .correct-answer {
+            background-color: #d1fae5;
+            border-color: #10b981;
+        }
+        
+        .incorrect-answer {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #000000;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-app text-app min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold mb-2">پنل مدیریت آزمون</h1>
+            <p class="en-text text-xl mb-4">Erika Khosravi - Admin Panel</p>
+            <div class="flex justify-center mb-6">
+                <div class="w-6 h-1 bg-black rounded-full"></div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Users List -->
+            <div class="bg-white border-app border rounded-2xl shadow-md p-6">
+                <h2 class="text-2xl font-bold mb-6 text-center">لیست شرکت‌کنندگان</h2>
+                
+                <!-- Search and Filters -->
+                <div class="mb-6 space-y-4">
+                    <input 
+                        type="text" 
+                        id="search-input"
+                        placeholder="جستجو بر اساس نام، تلفن یا آیدی تلگرام..."
+                        class="w-full p-3 border-app border rounded-lg bg-input focus:ring-2 focus:ring-black focus:border-black"
+                    >
+                    
+                    <div class="flex gap-4">
+                        <button id="filter-all" class="btn-primary px-4 py-2 rounded-lg text-sm flex-1">
+                            همه کاربران
+                        </button>
+                        <button id="filter-not-graded" class="bg-gray-500 text-white px-4 py-2 rounded-lg text-sm flex-1">
+                            تصحیح نشده
+                        </button>
+                        <button id="filter-graded" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm flex-1">
+                            تصحیح شده
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Users Container -->
+                <div id="users-container" class="space-y-4 max-h-[600px] overflow-y-auto">
+                    <!-- Users will be loaded here -->
+                </div>
+
+                <!-- Loading State -->
+                <div id="loading-users" class="text-center py-8">
+                    <div class="spinner mx-auto"></div>
+                    <p class="text-gray-600 mt-2">در حال بارگذاری کاربران...</p>
+                </div>
+            </div>
+
+            <!-- User Details and Grading -->
+            <div class="bg-white border-app border rounded-2xl shadow-md p-6">
+                <div id="no-user-selected" class="text-center py-12">
+                    <div class="text-6xl mb-4">👤</div>
+                    <h3 class="text-xl font-bold mb-2">هیچ کاربری انتخاب نشده</h3>
+                    <p class="text-gray-600">لطفاً یک کاربر از لیست سمت راست انتخاب کنید</p>
+                </div>
+
+                <!-- User Exam Details -->
+                <div id="user-exam-details" class="hidden">
+                    <!-- User Info -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <h3 class="text-lg font-bold mb-3">اطلاعات کاربر</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="font-medium">نام و نام خانوادگی:</span>
+                                <span id="user-fullname">-</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">شماره تلفن:</span>
+                                <span id="user-phone">-</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">آیدی تلگرام:</span>
+                                <span id="user-telegram">-</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">تاریخ ثبت‌نام:</span>
+                                <span id="user-registered">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exam Status -->
+                    <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                        <h3 class="text-lg font-bold mb-3">وضعیت آزمون</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                                <span class="font-medium">سوالات پاسخ داده:</span>
+                                <span id="answered-count">0</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">سوالات بی‌پاسخ:</span>
+                                <span id="unanswered-count">54</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">نمره فعلی:</span>
+                                <span id="current-score">0</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">وضعیت تصحیح:</span>
+                                <span id="grading-status" class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">تصحیح نشده</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Questions and Grading -->
+                    <div>
+                        <h3 class="text-lg font-bold mb-4">تصحیح سوالات</h3>
+                        <div class="mb-4 flex justify-between items-center">
+                            <span class="text-sm text-gray-600">برای هر سوال پاسخ صحیح یا غلط را مشخص کنید</span>
+                            <button id="save-grades" class="btn-primary px-6 py-2 rounded-lg text-sm">
+                                ذخیره نمرات
+                            </button>
+                        </div>
+
+                        <div id="questions-container" class="space-y-4 max-h-[500px] overflow-y-auto">
+                            <!-- Questions will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const supabaseUrl = 'https://zuxnwivvhdknrsnelcio.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1eG53aXZ2aGRrbnJzbmVsY2lvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwOTk4MjUsImV4cCI6MjA3ODY3NTgyNX0.WxyqhPYudUH_yP_5RyiYhcVeF2_dp30SDg96Ost4Xp4';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Questions data - تمام 54 سوال
+        const questions = [
+            {
+                id: 1,
+                text: "اگر کارفرما مشکل اصلی‌اش رشد پیجش باشد چه جوانبی را در نظر می‌گیرید؟",
+                type: "text"
+            },
+            {
+                id: 2,
+                text: "چه چیزی باعث می‌شود جلوی رشد پیج گرفته شود؟",
+                type: "text"
+            },
+            {
+                id: 3,
+                text: "بهترین زمان پست گذاری؟",
+                type: "multiple",
+                options: [
+                    "تایمی که الگوریتم اینستاگرام در نظر گرفته.",
+                    "تایمی که کارفرما تعیین کند.",
+                    "تایمی که ادمین در نظر دارد.",
+                    "تایم و ساعت آپلود مهم نیست."
+                ]
+            },
+            {
+                id: 4,
+                text: "مهم ترین عامل سناریونویسی چیست؟",
+                type: "text"
+            },
+            {
+                id: 5,
+                text: "کدام گزینه در رابطه با وظایف ادمین سناریونویس غلط است؟",
+                type: "multiple",
+                options: [
+                    "نوشتن سناریو به صورت کامل.",
+                    "نوشتن جزئیات سناریو.",
+                    "چیدمان ساختار سناریو.",
+                    "فیلمبرداری از محتوای سناریو."
+                ]
+            },
+            {
+                id: 6,
+                text: "اگر یک پست در زمان های اولیه (۲۴ ساعت اول) آپلود، ویو مدنظر را نگیرد بهترین کار چیست؟",
+                type: "multiple",
+                options: [
+                    "حذف پست.",
+                    "آرشیو پست.",
+                    "تبلیغ فوری.",
+                    "تحلیل پست."
+                ]
+            },
+            {
+                id: 7,
+                text: "۴ هدف اصلی استوری گذاشتن را بگویید (بدون توضیح فقط گفتن هدف)؟",
+                type: "text"
+            },
+            {
+                id: 8,
+                text: "بهترین تعداد استوری روزانه برای پیج های آموزشی؟",
+                type: "multiple",
+                options: [
+                    "۳ تا ۶ استوری.",
+                    "۶ تا ۸ استوری.",
+                    "۱۰ الی ۲۰ و حتی بیشتر."
+                ]
+            },
+            {
+                id: 9,
+                text: "چه نوع محتوایی باعث ورودی گرفتن از اکسپلور می‌شود؟ (به صورت کوتاه توضیح دهید)",
+                type: "text"
+            },
+            {
+                id: 10,
+                text: "چرا استفاده از ابزارهای تعاملی در استوری اهمیت دارد؟",
+                type: "text"
+            },
+            {
+                id: 11,
+                text: "تفاوت محتوای پست و استوری از نظر هدف توضیح دهید.",
+                type: "text"
+            },
+            {
+                id: 12,
+                text: "بعد از آنالیز ویترین پیج باید کدام یک از موردهای زیر بررسی شود؟",
+                type: "multiple",
+                options: [
+                    "رشد پیج.",
+                    "تبلیغات پیج.",
+                    "استوری.",
+                    "هیچکدام."
+                ]
+            },
+            {
+                id: 13,
+                text: "کدام عامل بیشترین تاثیر را در وایرال شدن ریلز دارد؟",
+                type: "multiple",
+                options: [
+                    "کیفیت فیلمبرداری - تایم ریلز.",
+                    "استفاده از آهنگ ترند.",
+                    "نیازسازی موثر.",
+                    "سناریو."
+                ]
+            },
+            {
+                id: 14,
+                text: "بهترین زمان برای آپلود پست کدام تایم است؟",
+                type: "multiple",
+                options: [
+                    "روز.",
+                    "شب.",
+                    "هیچکدام."
+                ]
+            },
+            {
+                id: 15,
+                text: "در استراتژی ریلز، ثانیه اول چه اسمی دارد؟ مهم است؟",
+                type: "multiple",
+                options: [
+                    "کال تو اکشن - خیر.",
+                    "کال تو اکشن - بله.",
+                    "قلاب - بله.",
+                    "قلاب - خیر."
+                ]
+            },
+            {
+                id: 16,
+                text: "اگر ریلز پیج بازدید کمی بگیرد، شما در جایگاه ادمین چه اقدامی انجام می‌دهید؟",
+                type: "text"
+            },
+            {
+                id: 17,
+                text: "تفاوت ریلز آموزشی و تبلیغاتی از نظر هدف و ساختار توضیح دهید.",
+                type: "text"
+            },
+            {
+                id: 18,
+                text: "هدف اصلی از پاسخ‌دهی به دایرکت ها چیست؟",
+                type: "text"
+            },
+            {
+                id: 19,
+                text: "اگر در یک موقعیت، بازخورد و پیام منفی از کاربران پیج یا پلتفرم تلگرام دریافت کنید، اولین اقدام چیست؟ (پاسخ کوتاه)",
+                type: "text"
+            },
+            {
+                id: 20,
+                text: "هنگام جواب دادن به کامنت ها باید چطور برخورد کرد؟",
+                type: "text"
+            },
+            {
+                id: 21,
+                text: "بهترین روش برای جواب دادن به مشتری که دو دل هست موقع خرید چیست؟",
+                type: "text"
+            },
+            {
+                id: 22,
+                text: "بهترین روش متقاعد کردن مشتری چه روشی هست؟ (پاسخ کوتاه)",
+                type: "text"
+            },
+            {
+                id: 23,
+                text: "آیا بین ادمین دایرکت فروش و ادمین دایرکتی که وظیفه‌اش تعامل است فرق هست؟",
+                type: "multiple",
+                options: [
+                    "بله.",
+                    "خیر."
+                ]
+            },
+            {
+                id: 24,
+                text: "اگر پیج کارفرما بعد از آنالیز کلی نیاز داشت که فروش یا رشد پیج را یاد بگیرد، آیا ادمین آنالیز باید در رابطه با آن مشکل به آن‌ها مشاوره بدهد؟ (پاسخ کوتاه)",
+                type: "text"
+            },
+            {
+                id: 25,
+                text: "ساختار اصولی سناریو را توضیح دهید.",
+                type: "text"
+            },
+            {
+                id: 26,
+                text: "ساختار اصولی سناریوی استوری را توضیح دهید.",
+                type: "text"
+            },
+            {
+                id: 27,
+                text: "چه کارها و اقداماتی باعث رشد فروش می‌شود؟",
+                type: "text"
+            },
+            {
+                id: 28,
+                text: "برای اینکه در اینستاگرام سریع تر رشد کنیم کدام مورد تصمیم عاقلانه تری است؟",
+                type: "multiple",
+                options: [
+                    "تبلیغات.",
+                    "محتوا.",
+                    "هیچکدام."
+                ]
+            },
+            {
+                id: 29,
+                text: "برای ریلزی که آپلود می‌کنیم نیاز است قبلش در استوری اقداماتی صورت بگیرد؟ (برای بله یا خیر توضیح دهید)",
+                type: "text"
+            },
+            {
+                id: 30,
+                text: "کدام باعث رشد پیج می‌شود:",
+                type: "multiple",
+                options: [
+                    "مدام استوری گذاشتن.",
+                    "فعالیت اصولی.",
+                    "محتوا مناسب.",
+                    "هیچکدام."
+                ]
+            },
+            {
+                id: 31,
+                text: "در یک سناریوی مناسب، بهترین بخش برای جلب توجه مخاطب کدام است؟",
+                type: "multiple",
+                options: [
+                    "ثانیه های پایانی.",
+                    "ثانیه های میانی.",
+                    "کپشن ویدیو.",
+                    "هیچکدام."
+                ]
+            },
+            {
+                id: 32,
+                text: "در سناریوهای آموزشی بهترین روش انتقال به بیننده چیست؟",
+                type: "multiple",
+                options: [
+                    "فقط توضیح آموزشات.",
+                    "نمایش یک مثال.",
+                    "گفتن اطلاعات پشت سر هم.",
+                    "نوشتن متن روی ویدیو."
+                ]
+            },
+            {
+                id: 33,
+                text: "اگر هدف سناریو فروش محصول باشد چه نکته هایی باید اجرا شود؟",
+                type: "text"
+            },
+            {
+                id: 34,
+                text: "۳ نمونه قلاب برای پیج فروش لباس بدهید (لباس دخترانه).",
+                type: "text"
+            },
+            {
+                id: 35,
+                text: "یک سناریوی ریلز کوتاه برای پیج فروش کیف بنویسید.",
+                type: "text"
+            },
+            {
+                id: 36,
+                text: "کپشن موثر باید چه ویژگی داشته باشد؟",
+                type: "text"
+            },
+            {
+                id: 37,
+                text: "کدام مورد در رابطه با وایرال شدن ریلز موثر نیست؟",
+                type: "multiple",
+                options: [
+                    "استفاده از کپشن.",
+                    "انتشار در ساعت مناسب.",
+                    "کیفیت محتوا.",
+                    "کاور."
+                ]
+            },
+            {
+                id: 38,
+                text: "آیا باید تمام پست های پیج یک نواخت و در یک قالب و هدف باشند؟ یا در موضوعات مختلف؟ (جواب خود را توضیح دهید)",
+                type: "text"
+            },
+            {
+                id: 39,
+                text: "مرحله به مرحله آنالیز یک پیج را توضیح دهید.",
+                type: "text"
+            },
+            {
+                id: 40,
+                text: "آیا جواب دادن به بازخوردهای منفی در یک پیج فروشگاهی مهم است؟",
+                type: "multiple",
+                options: [
+                    "بله.",
+                    "خیر."
+                ]
+            },
+            {
+                id: 41,
+                text: "۴ مورد از هدف اصلی استوری گذاشتن را بیان کنید.",
+                type: "text"
+            },
+            {
+                id: 42,
+                text: "کدام ابزار از استوری باعث مارکتینگ در پیج می‌شود؟",
+                type: "multiple",
+                options: [
+                    "استفاده از استیکرهای تعاملی.",
+                    "۷ تا استوری روزانه متنوع.",
+                    "با چهره فعالیت کردن.",
+                    "استوری گذاشتن به صورت متداوم."
+                ]
+            },
+            {
+                id: 43,
+                text: "چند اقدام برای بالا بردن ویو استوری بگویید.",
+                type: "text"
+            },
+            {
+                id: 44,
+                text: "۳ ایده برای استوری پیج فروش لباس؟ *فقط هدف استوری گفته شود.",
+                type: "text"
+            },
+            {
+                id: 45,
+                text: "آیا تعامل ساعت مشخصی دارد؟",
+                type: "multiple",
+                options: [
+                    "بله.",
+                    "خیر."
+                ]
+            },
+            {
+                id: 46,
+                text: "آیا تعامل کردن روی رشد پیج تاثیر دارد؟ (توضیح دهید)",
+                type: "text"
+            },
+            {
+                id: 47,
+                text: "بهترین روش تبلیغ را توضیح دهید.",
+                type: "text"
+            },
+            {
+                id: 48,
+                text: "۴ هدف اصلی تبلیغات را توضیح دهید.",
+                type: "text"
+            },
+            {
+                id: 49,
+                text: "تصور کنید قرار است به دو تا بلاگر تبلیغ بدهید. هر دو ۵۰۰ کا فالور دارند. شما موقع انتخاب بلاگر به چه چیزهایی توجه می‌کنید؟ هر دو بلاگر را توضیح دهید.",
+                type: "text"
+            },
+            {
+                id: 50,
+                text: "اگر بخواهید به یک نفر تبلیغ بدهید به چه چیزهایی توجه می‌کنید؟",
+                type: "text"
+            },
+            {
+                id: 51,
+                text: "در تبلیغات بلاگرها کدام موثرتر است؟",
+                type: "multiple",
+                options: [
+                    "گویشی.",
+                    "بنری.",
+                    "حضوری."
+                ]
+            },
+            {
+                id: 52,
+                text: "چه المان هایی در تبلیغ باعث افزایش اعتماد مخاطب می‌شود؟",
+                type: "text"
+            },
+            {
+                id: 53,
+                text: "آیا با یک پیج صفر یا حداقل ۳۰۰ - ۴۰۰ تایی روش درستی است تبلیغ دادن؟",
+                type: "multiple",
+                options: [
+                    "بله.",
+                    "خیر."
+                ]
+            },
+            {
+                id: 54,
+                text: "برای اینکه بتوانیم محصول را بفروشیم (حتی به ۳ - ۴ تا مشتری! و حتی ۱ - ۲ تا مشتری) باید چه کارهایی انجام دهیم؟",
+                type: "text"
+            }
+        ];
+
+        let allUsers = [];
+        let selectedUser = null;
+        let userAnswers = [];
+        let correctedAnswers = Array(54).fill(null); // null: تصحیح نشده, true: صحیح, false: غلط
+
+        // DOM elements
+        const usersContainer = document.getElementById('users-container');
+        const loadingUsers = document.getElementById('loading-users');
+        const noUserSelected = document.getElementById('no-user-selected');
+        const userExamDetails = document.getElementById('user-exam-details');
+        const questionsContainer = document.getElementById('questions-container');
+        const searchInput = document.getElementById('search-input');
+        const saveGradesBtn = document.getElementById('save-grades');
+
+        // Load all users
+        async function loadUsers() {
+            try {
+                loadingUsers.classList.remove('hidden');
+                usersContainer.innerHTML = '';
+
+                const { data: users, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                allUsers = users || [];
+                displayUsers(allUsers);
+                
+            } catch (error) {
+                console.error('Error loading users:', error);
+                alert('خطا در بارگذاری کاربران');
+            } finally {
+                loadingUsers.classList.add('hidden');
+            }
+        }
+
+        // Display users in the list
+        function displayUsers(users) {
+            usersContainer.innerHTML = '';
+
+            if (users.length === 0) {
+                usersContainer.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        کاربری یافت نشد
+                    </div>
+                `;
+                return;
+            }
+
+            users.forEach(user => {
+                const userCard = document.createElement('div');
+                userCard.className = 'user-card';
+                userCard.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-lg">${user.full_name}</h4>
+                            <div class="text-sm text-gray-600 mt-1">
+                                <div>📱 ${user.phone}</div>
+                                <div>📧 @${user.telegram}</div>
+                                <div class="text-xs mt-2">${new Date(user.created_at).toLocaleDateString('fa-IR')}</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="inline-block w-3 h-3 rounded-full bg-gray-400" id="status-${user.id}"></span>
+                        </div>
+                    </div>
+                `;
+
+                userCard.addEventListener('click', () => selectUser(user));
+                usersContainer.appendChild(userCard);
+
+                // Check if user has exam results
+                checkUserExamStatus(user.id);
+            });
+        }
+
+        // Check user exam status
+        async function checkUserExamStatus(userId) {
+            try {
+                const { data: examResults } = await supabase
+                    .from('exam_results')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .single();
+
+                const { data: examGrades } = await supabase
+                    .from('exam_grades')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .single();
+
+                const statusElement = document.getElementById(`status-${userId}`);
+                if (examGrades) {
+                    statusElement.className = 'inline-block w-3 h-3 rounded-full bg-green-500';
+                    statusElement.title = 'تصحیح شده';
+                } else if (examResults) {
+                    statusElement.className = 'inline-block w-3 h-3 rounded-full bg-blue-500';
+                    statusElement.title = 'آزمون داده شده';
+                } else {
+                    statusElement.className = 'inline-block w-3 h-3 rounded-full bg-yellow-500';
+                    statusElement.title = 'در حال آزمون';
+                }
+            } catch (error) {
+                console.error('Error checking user status:', error);
+            }
+        }
+
+        // Select user and load their exam data
+        async function selectUser(user) {
+            selectedUser = user;
+            
+            // Update UI
+            document.querySelectorAll('.user-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+
+            noUserSelected.classList.add('hidden');
+            userExamDetails.classList.remove('hidden');
+
+            // Update user info
+            document.getElementById('user-fullname').textContent = user.full_name;
+            document.getElementById('user-phone').textContent = user.phone;
+            document.getElementById('user-telegram').textContent = user.telegram;
+            document.getElementById('user-registered').textContent = new Date(user.created_at).toLocaleDateString('fa-IR');
+
+            // Load user's exam data
+            await loadUserExamData(user.id);
+        }
+
+        // Load user's exam answers and grades
+        async function loadUserExamData(userId) {
+            try {
+                questionsContainer.innerHTML = '<div class="text-center py-4"><div class="spinner mx-auto"></div><p>در حال بارگذاری پاسخ‌ها...</p></div>';
+
+                // Load exam results
+                const { data: examResults, error: resultsError } = await supabase
+                    .from('exam_results')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .single();
+
+                if (resultsError && resultsError.code !== 'PGRST116') {
+                    throw resultsError;
+                }
+
+                userAnswers = examResults?.answers || Array(54).fill(null);
+
+                // Load existing grades
+                const { data: examGrades, error: gradesError } = await supabase
+                    .from('exam_grades')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .single();
+
+                if (gradesError && gradesError.code !== 'PGRST116') {
+                    throw gradesError;
+                }
+
+                correctedAnswers = examGrades?.corrected_answers || Array(54).fill(null);
+
+                // Update exam status
+                const answeredCount = userAnswers.filter(answer => answer !== null).length;
+                const currentScore = correctedAnswers.filter(answer => answer === true).length;
+
+                document.getElementById('answered-count').textContent = answeredCount;
+                document.getElementById('unanswered-count').textContent = 54 - answeredCount;
+                document.getElementById('current-score').textContent = currentScore;
+
+                const gradingStatus = document.getElementById('grading-status');
+                if (examGrades) {
+                    gradingStatus.textContent = 'تصحیح شده';
+                    gradingStatus.className = 'bg-green-100 text-green-800 px-2 py-1 rounded text-xs';
+                } else {
+                    gradingStatus.textContent = 'تصحیح نشده';
+                    gradingStatus.className = 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs';
+                }
+
+                // Display questions and answers
+                displayQuestionsAndAnswers();
+
+            } catch (error) {
+                console.error('Error loading user exam data:', error);
+                alert('خطا در بارگذاری داده‌های آزمون کاربر');
+            }
+        }
+
+        // Display questions with user answers and grading buttons
+        function displayQuestionsAndAnswers() {
+            questionsContainer.innerHTML = '';
+
+            questions.forEach((question, index) => {
+                const userAnswer = userAnswers[index];
+                const isCorrect = correctedAnswers[index];
+                
+                const questionElement = document.createElement('div');
+                questionElement.className = `question-item ${isCorrect === true ? 'correct-answer' : ''} ${isCorrect === false ? 'incorrect-answer' : ''}`;
+                
+                let answerContent = '';
+                if (question.type === 'multiple') {
+                    const selectedOption = userAnswer !== null ? question.options[userAnswer] : 'پاسخ نداده';
+                    answerContent = `
+                        <div class="mt-2">
+                            <strong>پاسخ کاربر:</strong>
+                            <span class="mr-2 ${userAnswer === null ? 'text-red-500' : ''}">
+                                ${selectedOption}
+                            </span>
+                        </div>
+                    `;
+                } else {
+                    const answerText = userAnswer || 'پاسخ نداده';
+                    answerContent = `
+                        <div class="mt-2">
+                            <strong>پاسخ کاربر:</strong>
+                            <div class="mt-1 p-2 bg-gray-50 rounded text-sm ${userAnswer === null ? 'text-red-500' : ''}">
+                                ${answerText}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                questionElement.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h4 class="font-bold">سوال ${index + 1}: ${question.text}</h4>
+                            ${answerContent}
+                        </div>
+                        <div class="flex flex-col gap-2 mr-4">
+                            <button class="correct-btn" onclick="markAnswer(${index}, true)" ${isCorrect === true ? 'disabled' : ''}>
+                                ✅ صحیح
+                            </button>
+                            <button class="incorrect-btn" onclick="markAnswer(${index}, false)" ${isCorrect === false ? 'disabled' : ''}>
+                                ❌ غلط
+                            </button>
+                        </div>
+                    </div>
+                    ${isCorrect !== null ? `
+                        <div class="mt-2 text-sm ${isCorrect ? 'text-green-600' : 'text-red-600'}">
+                            ${isCorrect ? '✅ پاسخ صحیح علامت‌گذاری شده' : '❌ پاسخ غلط علامت‌گذاری شده'}
+                        </div>
+                    ` : ''}
+                `;
+
+                questionsContainer.appendChild(questionElement);
+            });
+        }
+
+        // Mark answer as correct or incorrect
+        function markAnswer(questionIndex, isCorrect) {
+            correctedAnswers[questionIndex] = isCorrect;
+            
+            // Update UI
+            const questionElement = questionsContainer.children[questionIndex];
+            questionElement.className = `question-item ${isCorrect ? 'correct-answer' : 'incorrect-answer'}`;
+            
+            // Update buttons
+            const buttons = questionElement.querySelectorAll('button');
+            buttons[0].disabled = isCorrect;
+            buttons[1].disabled = !isCorrect;
+            
+            // Add status message
+            let statusDiv = questionElement.querySelector('.mt-2');
+            if (!statusDiv || !statusDiv.className.includes('text-')) {
+                statusDiv = document.createElement('div');
+                statusDiv.className = `mt-2 text-sm ${isCorrect ? 'text-green-600' : 'text-red-600'}`;
+                questionElement.appendChild(statusDiv);
+            }
+            statusDiv.textContent = isCorrect ? '✅ پاسخ صحیح علامت‌گذاری شده' : '❌ پاسخ غلط علامت‌گذاری شده';
+            
+            // Update current score
+            const currentScore = correctedAnswers.filter(answer => answer === true).length;
+            document.getElementById('current-score').textContent = currentScore;
+        }
+
+        // Save grades to database
+        async function saveGrades() {
+            if (!selectedUser) return;
+
+            try {
+                saveGradesBtn.disabled = true;
+                saveGradesBtn.innerHTML = '<div class="spinner"></div>در حال ذخیره...';
+
+                const correctedCount = correctedAnswers.filter(answer => answer !== null).length;
+                if (correctedCount === 0) {
+                    alert('لطفاً حداقل یک سوال را تصحیح کنید');
+                    return;
+                }
+
+                const finalScore = correctedAnswers.filter(answer => answer === true).length;
+
+                const { error } = await supabase
+                    .from('exam_grades')
+                    .upsert({
+                        user_id: selectedUser.id,
+                        answers: userAnswers,
+                        corrected_answers: correctedAnswers,
+                        score: finalScore,
+                        max_score: 54,
+                        corrected_by: 'Admin',
+                        corrected_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'user_id'
+                    });
+
+                if (error) throw error;
+
+                alert(`نمرات کاربر با موفقیت ذخیره شد\nنمره نهایی: ${finalScore} از 54`);
+                
+                // Update UI
+                document.getElementById('grading-status').textContent = 'تصحیح شده';
+                document.getElementById('grading-status').className = 'bg-green-100 text-green-800 px-2 py-1 rounded text-xs';
+                
+                // Update user status in list
+                checkUserExamStatus(selectedUser.id);
+
+            } catch (error) {
+                console.error('Error saving grades:', error);
+                alert('خطا در ذخیره نمرات');
+            } finally {
+                saveGradesBtn.disabled = false;
+                saveGradesBtn.textContent = 'ذخیره نمرات';
+            }
+        }
+
+        // Search functionality
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredUsers = allUsers.filter(user => 
+                user.full_name.toLowerCase().includes(searchTerm) ||
+                user.phone.includes(searchTerm) ||
+                user.telegram.toLowerCase().includes(searchTerm)
+            );
+            displayUsers(filteredUsers);
+        });
+
+        // Filter functionality
+        document.getElementById('filter-all').addEventListener('click', () => {
+            displayUsers(allUsers);
+        });
+
+        document.getElementById('filter-not-graded').addEventListener('click', async () => {
+            const notGradedUsers = [];
+            for (const user of allUsers) {
+                const { data: examGrades } = await supabase
+                    .from('exam_grades')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .single();
+                
+                if (!examGrades) {
+                    notGradedUsers.push(user);
+                }
+            }
+            displayUsers(notGradedUsers);
+        });
+
+        document.getElementById('filter-graded').addEventListener('click', async () => {
+            const gradedUsers = [];
+            for (const user of allUsers) {
+                const { data: examGrades } = await supabase
+                    .from('exam_grades')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .single();
+                
+                if (examGrades) {
+                    gradedUsers.push(user);
+                }
+            }
+            displayUsers(gradedUsers);
+        });
+
+        // Make functions global for onclick events
+        window.markAnswer = markAnswer;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+            saveGradesBtn.addEventListener('click', saveGrades);
+        });
+    </script>
+</body>
+</html>
