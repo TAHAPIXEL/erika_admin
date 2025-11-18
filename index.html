@@ -164,56 +164,70 @@
                 <div id="no-user-selected" class="text-center py-12">
                     <div class="text-6xl mb-4">👤</div>
                     <h3 class="text-xl font-bold mb-2">هیچ کاربری انتخاب نشده</h3>
-                    <p class="text-gray-600">لطفاً یک کاربر از لیست انتخاب کنید</p>
+                    <p class="text-gray-600">لطفاً یک کاربر از لیست سمت راست انتخاب کنید</p>
                 </div>
 
                 <!-- User Exam Details -->
                 <div id="user-exam-details" class="hidden">
-                    <!-- User Info -->
-                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                        <h3 class="text-lg font-bold mb-3">اطلاعات کاربر</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <span class="font-medium">نام و نام خانوادگی:</span>
-                                <span id="user-fullname">-</span>
-                            </div>
-                            <div>
-                                <span class="font-medium">شماره تلفن:</span>
-                                <span id="user-phone">-</span>
-                            </div>
-                            <div>
-                                <span class="font-medium">آیدی تلگرام:</span>
-                                <span id="user-telegram">-</span>
-                            </div>
-                            <div>
-                                <span class="font-medium">تاریخ ثبت‌نام:</span>
-                                <span id="user-registered">-</span>
-                            </div>
-                        </div>
-                    </div>
+<!-- User Info -->
+<div class="bg-gray-50 rounded-lg p-4 mb-6">
+    <h3 class="text-lg font-bold mb-3">اطلاعات کاربر</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div>
+            <span class="font-medium">نام و نام خانوادگی:</span>
+            <span id="user-fullname">-</span>
+        </div>
+        <div>
+            <span class="font-medium">شماره تلفن:</span>
+            <span id="user-phone">-</span>
+        </div>
+        <div>
+            <span class="font-medium">آیدی تلگرام:</span>
+            <span id="user-telegram">-</span>
+        </div>
+        <div>
+            <span class="font-medium">تاریخ ثبت‌نام:</span>
+            <span id="user-registered">-</span>
+        </div>
+        <!-- اضافه کردن زمان شروع آزمون -->
+        <div>
+            <span class="font-medium">زمان شروع آزمون:</span>
+            <span id="exam-started-at">-</span>
+        </div>
+        <div>
+            <span class="font-medium">زمان پایان آزمون:</span>
+            <span id="exam-completed-at">-</span>
+        </div>
+    </div>
+</div>
 
-                    <!-- Exam Status -->
-                    <div class="bg-blue-50 rounded-lg p-4 mb-6">
-                        <h3 class="text-lg font-bold mb-3">وضعیت آزمون</h3>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                                <span class="font-medium">سوالات پاسخ داده:</span>
-                                <span id="answered-count">0</span>
-                            </div>
-                            <div>
-                                <span class="font-medium">سوالات بی‌پاسخ:</span>
-                                <span id="unanswered-count">54</span>
-                            </div>
-                            <div>
-                                <span class="font-medium">نمره فعلی:</span>
-                                <span id="current-score">0</span>
-                            </div>
-                            <div>
-                                <span class="font-medium">وضعیت تصحیح:</span>
-                                <span id="grading-status" class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">تصحیح نشده</span>
-                            </div>
-                        </div>
-                    </div>
+<!-- Exam Status -->
+<div class="bg-blue-50 rounded-lg p-4 mb-6">
+    <h3 class="text-lg font-bold mb-3">وضعیت آزمون</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div>
+            <span class="font-medium">سوالات پاسخ داده:</span>
+            <span id="answered-count">0</span>
+        </div>
+        <div>
+            <span class="font-medium">سوالات بی‌پاسخ:</span>
+            <span id="unanswered-count">54</span>
+        </div>
+        <div>
+            <span class="font-medium">نمره فعلی:</span>
+            <span id="current-score">0</span>
+        </div>
+        <div>
+            <span class="font-medium">وضعیت تصحیح:</span>
+            <span id="grading-status" class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">تصحیح نشده</span>
+        </div>
+        <!-- اضافه کردن مدت زمان آزمون -->
+        <div class="md:col-span-2">
+            <span class="font-medium">مدت زمان آزمون:</span>
+            <span id="exam-duration">-</span>
+        </div>
+    </div>
+</div>
 
                     <!-- Questions and Grading -->
                     <div>
@@ -654,76 +668,107 @@
             }
         }
 
-        // Display users in the list
-        function displayUsers(users) {
-            usersContainer.innerHTML = '';
+// Display users in the list
+function displayUsers(users) {
+    usersContainer.innerHTML = '';
 
-            if (users.length === 0) {
-                usersContainer.innerHTML = `
-                    <div class="text-center py-8 text-gray-500">
-                        کاربری یافت نشد
+    if (users.length === 0) {
+        usersContainer.innerHTML = `
+            <div class="text-center py-8 text-gray-500">
+                کاربری یافت نشد
+            </div>
+        `;
+        return;
+    }
+
+    users.forEach(user => {
+        const userCard = document.createElement('div');
+        userCard.className = 'user-card';
+        userCard.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <h4 class="font-bold text-lg">${user.full_name}</h4>
+                    <div class="text-sm text-gray-600 mt-1">
+                        <div>📱 ${user.phone}</div>
+                        <div>📧 @${user.telegram}</div>
+                        <div class="text-xs mt-2">${new Date(user.created_at).toLocaleDateString('fa-IR')}</div>
+                        <!-- زمان آزمون به صورت داینامیک اضافه خواهد شد -->
                     </div>
-                `;
-                return;
-            }
+                </div>
+                <div class="text-right">
+                    <span class="inline-block w-3 h-3 rounded-full bg-gray-400" id="status-${user.id}"></span>
+                </div>
+            </div>
+        `;
 
-            users.forEach(user => {
-                const userCard = document.createElement('div');
-                userCard.className = 'user-card';
-                userCard.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <h4 class="font-bold text-lg">${user.full_name}</h4>
-                            <div class="text-sm text-gray-600 mt-1">
-                                <div>📱 ${user.phone}</div>
-                                <div>📧 @${user.telegram}</div>
-                                <div class="text-xs mt-2">${new Date(user.created_at).toLocaleDateString('fa-IR')}</div>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <span class="inline-block w-3 h-3 rounded-full bg-gray-400" id="status-${user.id}"></span>
-                        </div>
-                    </div>
-                `;
+        userCard.addEventListener('click', () => selectUser(user));
+        usersContainer.appendChild(userCard);
 
-                userCard.addEventListener('click', () => selectUser(user));
-                usersContainer.appendChild(userCard);
+        // Check if user has exam results
+        checkUserExamStatus(user.id);
+    });
+}
 
                 // Check if user has exam results
                 checkUserExamStatus(user.id);
             });
         }
 
-        // Check user exam status
-        async function checkUserExamStatus(userId) {
-            try {
-                const { data: examResults } = await supabase
-                    .from('exam_results')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .single();
+// Check user exam status
+async function checkUserExamStatus(userId) {
+    try {
+        const { data: examResults } = await supabase
+            .from('exam_results')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
 
-                const { data: examGrades } = await supabase
-                    .from('exam_grades')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .single();
+        const { data: examGrades } = await supabase
+            .from('exam_grades')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
 
-                const statusElement = document.getElementById(`status-${userId}`);
-                if (examGrades) {
-                    statusElement.className = 'inline-block w-3 h-3 rounded-full bg-green-500';
-                    statusElement.title = 'تصحیح شده';
-                } else if (examResults) {
-                    statusElement.className = 'inline-block w-3 h-3 rounded-full bg-blue-500';
-                    statusElement.title = 'آزمون داده شده';
-                } else {
-                    statusElement.className = 'inline-block w-3 h-3 rounded-full bg-yellow-500';
-                    statusElement.title = 'در حال آزمون';
-                }
-            } catch (error) {
-                console.error('Error checking user status:', error);
+        const statusElement = document.getElementById(`status-${userId}`);
+        let statusText = '';
+        
+        if (examGrades) {
+            statusElement.className = 'inline-block w-3 h-3 rounded-full bg-green-500';
+            statusText = 'تصحیح شده';
+        } else if (examResults) {
+            statusElement.className = 'inline-block w-3 h-3 rounded-full bg-blue-500';
+            
+            // اضافه کردن زمان آزمون به کارت کاربر
+            if (examResults.exam_started_at) {
+                const examTime = new Date(examResults.exam_started_at);
+                statusText = `آزمون: ${examTime.toLocaleTimeString('fa-IR')}`;
+            } else {
+                statusText = 'آزمون داده شده';
+            }
+        } else {
+            statusElement.className = 'inline-block w-3 h-3 rounded-full bg-yellow-500';
+            statusText = 'در حال آزمون';
+        }
+        
+        statusElement.title = statusText;
+        
+        // اضافه کردن زمان به کارت کاربر
+        const userCard = document.querySelector(`[onclick="selectUser(${JSON.stringify(allUsers.find(u => u.id === userId))})"]`);
+        if (userCard && examResults?.exam_started_at) {
+            const timeElement = userCard.querySelector('.exam-time') || document.createElement('div');
+            timeElement.className = 'exam-time text-xs text-gray-500 mt-1';
+            const examTime = new Date(examResults.exam_started_at);
+            timeElement.textContent = `زمان آزمون: ${examTime.toLocaleTimeString('fa-IR')}`;
+            
+            if (!userCard.querySelector('.exam-time')) {
+                userCard.querySelector('.text-sm').appendChild(timeElement);
             }
         }
+        
+    } catch (error) {
+        console.error('Error checking user status:', error);
+    }
+}
 
         // Select user and load their exam data
         async function selectUser(user) {
@@ -748,62 +793,103 @@
             await loadUserExamData(user.id);
         }
 
-        // Load user's exam answers and grades
-        async function loadUserExamData(userId) {
-            try {
-                questionsContainer.innerHTML = '<div class="text-center py-4"><div class="spinner mx-auto"></div><p>در حال بارگذاری پاسخ‌ها...</p></div>';
+// Load user's exam answers and grades
+async function loadUserExamData(userId) {
+    try {
+        questionsContainer.innerHTML = '<div class="text-center py-4"><div class="spinner mx-auto"></div><p>در حال بارگذاری پاسخ‌ها...</p></div>';
 
-                // Load exam results
-                const { data: examResults, error: resultsError } = await supabase
-                    .from('exam_results')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .single();
+        // Load exam results
+        const { data: examResults, error: resultsError } = await supabase
+            .from('exam_results')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
 
-                if (resultsError && resultsError.code !== 'PGRST116') {
-                    throw resultsError;
-                }
-
-                userAnswers = examResults?.answers || Array(54).fill(null);
-
-                // Load existing grades
-                const { data: examGrades, error: gradesError } = await supabase
-                    .from('exam_grades')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .single();
-
-                if (gradesError && gradesError.code !== 'PGRST116') {
-                    throw gradesError;
-                }
-
-                correctedAnswers = examGrades?.corrected_answers || Array(54).fill(null);
-
-                // Update exam status
-                const answeredCount = userAnswers.filter(answer => answer !== null).length;
-                const currentScore = correctedAnswers.filter(answer => answer === true).length;
-
-                document.getElementById('answered-count').textContent = answeredCount;
-                document.getElementById('unanswered-count').textContent = 54 - answeredCount;
-                document.getElementById('current-score').textContent = currentScore;
-
-                const gradingStatus = document.getElementById('grading-status');
-                if (examGrades) {
-                    gradingStatus.textContent = 'تصحیح شده';
-                    gradingStatus.className = 'bg-green-100 text-green-800 px-2 py-1 rounded text-xs';
-                } else {
-                    gradingStatus.textContent = 'تصحیح نشده';
-                    gradingStatus.className = 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs';
-                }
-
-                // Display questions and answers
-                displayQuestionsAndAnswers();
-
-            } catch (error) {
-                console.error('Error loading user exam data:', error);
-                alert('خطا در بارگذاری داده‌های آزمون کاربر');
-            }
+        if (resultsError && resultsError.code !== 'PGRST116') {
+            throw resultsError;
         }
+
+        userAnswers = examResults?.answers || Array(54).fill(null);
+
+        // Load existing grades
+        const { data: examGrades, error: gradesError } = await supabase
+            .from('exam_grades')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+
+        if (gradesError && gradesError.code !== 'PGRST116') {
+            throw gradesError;
+        }
+
+        correctedAnswers = examGrades?.corrected_answers || Array(54).fill(null);
+
+        // Update exam status and timing information
+        const answeredCount = userAnswers.filter(answer => answer !== null).length;
+        const currentScore = correctedAnswers.filter(answer => answer === true).length;
+
+        document.getElementById('answered-count').textContent = answeredCount;
+        document.getElementById('unanswered-count').textContent = 54 - answeredCount;
+        document.getElementById('current-score').textContent = currentScore;
+
+        // نمایش زمان شروع و پایان آزمون
+        const examStartedAt = examResults?.exam_started_at;
+        const examCompletedAt = examResults?.exam_completed_at;
+        
+        if (examStartedAt) {
+            const startedDate = new Date(examStartedAt);
+            document.getElementById('exam-started-at').textContent = 
+                startedDate.toLocaleDateString('fa-IR') + ' - ' + 
+                startedDate.toLocaleTimeString('fa-IR');
+        } else {
+            document.getElementById('exam-started-at').textContent = 'ثبت نشده';
+        }
+
+        if (examCompletedAt) {
+            const completedDate = new Date(examCompletedAt);
+            document.getElementById('exam-completed-at').textContent = 
+                completedDate.toLocaleDateString('fa-IR') + ' - ' + 
+                completedDate.toLocaleTimeString('fa-IR');
+            
+            // محاسبه مدت زمان آزمون
+            if (examStartedAt) {
+                const startTime = new Date(examStartedAt);
+                const endTime = new Date(examCompletedAt);
+                const durationMs = endTime - startTime;
+                const durationMinutes = Math.floor(durationMs / (1000 * 60));
+                const durationHours = Math.floor(durationMinutes / 60);
+                const remainingMinutes = durationMinutes % 60;
+                
+                let durationText = '';
+                if (durationHours > 0) {
+                    durationText += `${durationHours} ساعت و `;
+                }
+                durationText += `${remainingMinutes} دقیقه`;
+                
+                document.getElementById('exam-duration').textContent = durationText;
+            }
+        } else {
+            document.getElementById('exam-completed-at').textContent = 'در حال انجام';
+            document.getElementById('exam-duration').textContent = 'در حال محاسبه';
+        }
+
+        const gradingStatus = document.getElementById('grading-status');
+        if (examGrades) {
+            gradingStatus.textContent = 'تصحیح شده';
+            gradingStatus.className = 'bg-green-100 text-green-800 px-2 py-1 rounded text-xs';
+        } else {
+            gradingStatus.textContent = 'تصحیح نشده';
+            gradingStatus.className = 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs';
+        }
+
+        // Display questions and answers
+        displayQuestionsAndAnswers();
+
+    } catch (error) {
+        console.error('Error loading user exam data:', error);
+        alert('خطا در بارگذاری داده‌های آزمون کاربر');
+    }
+}
 
         // Display questions with user answers and grading buttons
         function displayQuestionsAndAnswers() {
